@@ -1,29 +1,34 @@
-# udp_server.py
+# tcp_server.py
 
 import socket
 
-# Step 1: Create UDP socket
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+# Step 1: Create a TCP socket
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Step 2: Bind to address and port
-server_socket.bind(('localhost', 8081))
+server_socket.bind(('localhost', 8080))
 
-print("UDP Server is ready...")
+# Step 3: Listen for client connections
+server_socket.listen(1)
+print("Server is listening on port 8080...")
 
-while True:
-    # Step 3: Receive filename from client
-    filename, addr = server_socket.recvfrom(1024)
-    filename = filename.decode().strip()
+# Step 4: Accept connection
+conn, addr = server_socket.accept()
+print("Connected by:", addr)
 
-    print(f"Requested file: {filename}")
+# Step 5: Receive file name
+filename = conn.recv(1024).decode().strip()
 
-    try:
-        # Step 4: Open file and send content
-        with open(filename, 'r') as f:
-            data = f.read()
-        
-        server_socket.sendto(data.encode(), addr)
+try:
+    # Step 6: Open and read file
+    with open(filename, 'r') as f:
+        data = f.read()
 
-    except FileNotFoundError:
-        server_socket.sendto(b"File not found on server.", addr)
+    conn.send(data.encode())  # Send file contents
 
+except FileNotFoundError:
+    conn.send(b"File not found on server.")
+
+# Step 7: Close connection
+conn.close()
+server_socket.close()
